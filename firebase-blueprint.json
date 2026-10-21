@@ -1,0 +1,96 @@
+{
+  "entities": {
+    "DailyScore": {
+      "title": "DailyScore",
+      "description": "High score entry achieved by a player on a specific calendar day",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "date": { "type": "string", "maxLength": 10 },
+        "playerName": { "type": "string", "maxLength": 32 },
+        "score": { "type": "integer" },
+        "linesCleared": { "type": "integer" },
+        "maxCombo": { "type": "integer" },
+        "mode": { "type": "string", "maxLength": 32 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["date", "playerName", "score", "createdAt"]
+    },
+    "DailyChatMessage": {
+      "title": "DailyChatMessage",
+      "description": "Community message and tip shared in the Daily Challenge room",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "date": { "type": "string", "maxLength": 10 },
+        "playerName": { "type": "string", "maxLength": 32 },
+        "text": { "type": "string", "maxLength": 280 },
+        "scoreBadge": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["date", "playerName", "text", "createdAt"]
+    },
+    "MultiplayerRoom": {
+      "title": "MultiplayerRoom",
+      "description": "Real-time 1v1 multiplayer puzzle duel room state",
+      "type": "object",
+      "properties": {
+        "roomId": { "type": "string", "maxLength": 32 },
+        "hostId": { "type": "string", "maxLength": 64 },
+        "hostName": { "type": "string", "maxLength": 32 },
+        "status": { "type": "string", "enum": ["waiting", "in_progress", "finished"] },
+        "hostScore": { "type": "integer" },
+        "hostHp": { "type": "integer" },
+        "hostLines": { "type": "integer" },
+        "hostCombo": { "type": "integer" },
+        "hostGridSummary": { "type": "string", "maxLength": 256 },
+        "guestId": { "type": "string", "maxLength": 64 },
+        "guestName": { "type": "string", "maxLength": 32 },
+        "guestScore": { "type": "integer" },
+        "guestHp": { "type": "integer" },
+        "guestLines": { "type": "integer" },
+        "guestCombo": { "type": "integer" },
+        "guestGridSummary": { "type": "string", "maxLength": 256 },
+        "lastAttackText": { "type": "string", "maxLength": 64 },
+        "winnerId": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["roomId", "hostId", "hostName", "status", "createdAt"]
+    },
+    "PlayerLifetimeXP": {
+      "title": "PlayerLifetimeXP",
+      "description": "Total accumulated XP and level earned by a player across daily missions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "playerId": { "type": "string", "maxLength": 64 },
+        "playerName": { "type": "string", "maxLength": 32 },
+        "totalXp": { "type": "integer" },
+        "level": { "type": "integer" },
+        "title": { "type": "string", "maxLength": 32 },
+        "missionsCompleted": { "type": "integer" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["playerName", "totalXp", "level", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/daily_leaderboards/{date}/scores/{scoreId}": {
+      "schema": "DailyScore",
+      "description": "Daily high score entries organized by calendar date YYYY-MM-DD"
+    },
+    "/daily_chat/{date}/messages/{messageId}": {
+      "schema": "DailyChatMessage",
+      "description": "Daily challenge community chat messages"
+    },
+    "/multiplayer_rooms/{roomId}": {
+      "schema": "MultiplayerRoom",
+      "description": "Real-time 1v1 duel room match states"
+    },
+    "/lifetime_xp_leaderboard/{playerId}": {
+      "schema": "PlayerLifetimeXP",
+      "description": "Global leaderboard of total accumulated XP from all daily missions"
+    }
+  }
+}

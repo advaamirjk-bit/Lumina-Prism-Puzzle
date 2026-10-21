@@ -1,0 +1,93 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function isValidDailyScore(data) {
+      return data.keys().hasAll(['date', 'playerName', 'score', 'createdAt'])
+        && data.keys().hasOnly(['id', 'date', 'playerName', 'score', 'linesCleared', 'maxCombo', 'mode', 'createdAt'])
+        && data.date is string && data.date.size() <= 10
+        && data.playerName is string && data.playerName.size() >= 1 && data.playerName.size() <= 32
+        && data.score is int && data.score >= 0 && data.score <= 10000000
+        && data.createdAt is timestamp;
+    }
+
+    function isValidChatMessage(data) {
+      return data.keys().hasAll(['date', 'playerName', 'text', 'createdAt'])
+        && data.keys().hasOnly(['id', 'date', 'playerName', 'text', 'scoreBadge', 'createdAt'])
+        && data.date is string && data.date.size() <= 10
+        && data.playerName is string && data.playerName.size() >= 1 && data.playerName.size() <= 32
+        && data.text is string && data.text.size() >= 1 && data.text.size() <= 280
+        && data.createdAt is timestamp;
+    }
+
+    function isValidMultiplayerRoom(data) {
+      return data.keys().hasAll(['roomId', 'hostId', 'hostName', 'status', 'createdAt'])
+        && data.roomId is string && data.roomId.size() <= 32
+        && data.hostId is string && data.hostId.size() <= 64
+        && data.hostName is string && data.hostName.size() >= 1 && data.hostName.size() <= 32
+        && data.status in ['waiting', 'in_progress', 'finished']
+        && data.createdAt is timestamp;
+    }
+
+    function isValidMultiplayerRoomUpdate(data) {
+      return data.roomId is string && data.roomId.size() <= 32
+        && data.status in ['waiting', 'in_progress', 'finished'];
+    }
+
+    function isValidLifetimeXP(data) {
+      return data.keys().hasAll(['playerName', 'totalXp', 'level', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'playerId', 'playerName', 'totalXp', 'level', 'title', 'missionsCompleted', 'updatedAt'])
+        && data.playerName is string && data.playerName.size() >= 1 && data.playerName.size() <= 32
+        && data.totalXp is int && data.totalXp >= 0 && data.totalXp <= 100000000
+        && data.level is int && data.level >= 1 && data.level <= 1000
+        && data.updatedAt is timestamp;
+    }
+
+    // Daily leaderboards organized by calendar date
+    match /daily_leaderboards/{date}/scores/{scoreId} {
+      allow read, list: if isValidId(date);
+      allow create: if isValidId(date) && isValidId(scoreId)
+        && isValidDailyScore(incoming())
+        && incoming().date == date;
+      allow update, delete: if false;
+    }
+
+    // Daily Challenge real-time chat room
+    match /daily_chat/{date}/messages/{messageId} {
+      allow read, list: if isValidId(date);
+      allow create: if isValidId(date) && isValidId(messageId)
+        && isValidChatMessage(incoming())
+        && incoming().date == date;
+      allow update, delete: if false;
+    }
+
+    // Multiplayer 1v1 duel rooms
+    match /multiplayer_rooms/{roomId} {
+      allow read, list: if true;
+      allow create: if isValidId(roomId) && isValidMultiplayerRoom(incoming());
+      allow update: if isValidId(roomId) && isValidMultiplayerRoomUpdate(incoming());
+      allow delete: if false;
+    }
+
+    // Global Lifetime XP Leaderboard from Daily Missions
+    match /lifetime_xp_leaderboard/{playerId} {
+      allow read, list: if true;
+      allow create, update: if isValidId(playerId) && isValidLifetimeXP(incoming());
+      allow delete: if false;
+    }
+  }
+}
