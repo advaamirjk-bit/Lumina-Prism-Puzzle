@@ -79,6 +79,7 @@ import { vibrateStoneBreak, vibrateScaryGameOver } from './utils/vibration';
 import { Trophy, MessageSquare, HelpCircle, Sparkles } from 'lucide-react';
 import { BannerAd } from './components/ads/BannerAd';
 import { VideoAdModal } from './components/ads/VideoAdModal';
+import { getStreakMultiplier } from './utils/streakMultiplier';
 
 export default function App() {
   // Persistence & Settings
@@ -87,6 +88,9 @@ export default function App() {
   const [levelStars, setLevelStars] = useState(loadLevelStars);
   const [achievements, setAchievements] = useState(loadAchievements);
   const [dailyRewardStatus, setDailyRewardStatus] = useState(checkDailyRewardStatus);
+
+  // Active Play Session Streak Multiplier (grows with daily check-ins)
+  const streakMultiplier = getStreakMultiplier(dailyRewardStatus.currentStreak);
 
   // Player Identity (Persistent for Multiplayer and Chat)
   const [playerId] = useState<string>(() => {
@@ -708,12 +712,19 @@ export default function App() {
         particleCanvasRef.current?.shockwave(220, 220, activeTheme.accentColor);
       }
 
+      // Apply Streak Multiplier for active play session
+      if (streakMultiplier > 1) {
+        turnScore = Math.round(turnScore * streakMultiplier);
+      }
+
       addFloatingScore(
         50,
         35,
-        `+${turnScore.toLocaleString()}${newCombo > 1 ? ` · x${newCombo} COMBO!` : ''}`,
+        `+${turnScore.toLocaleString()}${newCombo > 1 ? ` · x${newCombo} COMBO!` : ''}${
+          streakMultiplier > 1 ? ` (⚡${streakMultiplier.toFixed(2)}x)` : ''
+        }`,
         totalLinesAndBoxes >= 2 ? '#f59e0b' : activeTheme.accentColor,
-        newCombo > 1
+        newCombo > 1 || streakMultiplier > 1
       );
 
       if (mode === 'TIME_ATTACK') {
@@ -728,6 +739,9 @@ export default function App() {
       if (newCombo >= 5) updateAchievement('combo_streak_5', 1);
     } else {
       newCombo = 1;
+      if (streakMultiplier > 1) {
+        turnScore = Math.round(turnScore * streakMultiplier);
+      }
     }
 
     setComboCount(newCombo);
@@ -1146,6 +1160,10 @@ export default function App() {
           comboCount={comboCount}
           frenzyMeter={frenzyMeter}
           frenzyActive={frenzyActive}
+          dailyStreak={dailyRewardStatus.currentStreak}
+          streakMultiplier={streakMultiplier}
+          canClaimDailyReward={dailyRewardStatus.canClaim}
+          onOpenDailyReward={handleOpenDailyStreakWithAd}
           movesLeft={movesLeft}
           timeLeft={timeLeft}
           decaySummary={getDecayingCellsSummary(grid)}

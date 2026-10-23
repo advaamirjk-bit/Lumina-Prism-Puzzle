@@ -1,7 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { GameMode, PowerUpType, QuestLevel } from '../types/game';
-import { Hammer, Sparkles, Shuffle, Volume2, VolumeX, RotateCcw, Trophy, Flame } from 'lucide-react';
+import {
+  Hammer,
+  Sparkles,
+  Shuffle,
+  Volume2,
+  VolumeX,
+  RotateCcw,
+  Trophy,
+  Flame,
+  Zap,
+  Gift,
+  ChevronRight,
+  Info,
+  TrendingUp,
+} from 'lucide-react';
 import { GEM_META } from '../utils/puzzleBlocks';
+import { getStreakTierInfo, getStreakMultiplier } from '../utils/streakMultiplier';
 
 interface GameHUDProps {
   mode: GameMode;
@@ -10,6 +25,10 @@ interface GameHUDProps {
   comboCount: number;
   frenzyMeter: number;
   frenzyActive: boolean;
+  dailyStreak?: number;
+  streakMultiplier?: number;
+  canClaimDailyReward?: boolean;
+  onOpenDailyReward?: () => void;
   movesLeft?: number;
   timeLeft?: number;
   decaySummary?: { totalDecaying: number; imminentDanger: number; stoneCount: number };
@@ -39,6 +58,10 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   comboCount,
   frenzyMeter,
   frenzyActive,
+  dailyStreak = 0,
+  streakMultiplier,
+  canClaimDailyReward = false,
+  onOpenDailyReward,
   movesLeft,
   timeLeft,
   decaySummary,
@@ -56,6 +79,10 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   onOpenAchievements,
   onOpenLevelSelector,
 }) => {
+  const [showStreakDetails, setShowStreakDetails] = useState<boolean>(false);
+  const activeMultiplier = streakMultiplier ?? getStreakMultiplier(dailyStreak);
+  const tierInfo = getStreakTierInfo(dailyStreak);
+
   return (
     <div
       id="tutorial-target-hud"
@@ -111,6 +138,171 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             {highScore.toLocaleString()}
           </span>
         </div>
+      </div>
+
+      {/* Dynamic Luminous Streak Multiplier Element */}
+      <div
+        className={`relative overflow-hidden rounded-xl border backdrop-blur-md transition-all duration-500 ${tierInfo.containerClass} ${tierInfo.glowShadowClass}`}
+      >
+        <div className="flex items-center justify-between gap-2 px-3 py-2">
+          {/* Left: Streak tier icon & day counter */}
+          <div className="flex items-center gap-2 min-w-0">
+            {/* Luminous Tier Emblem */}
+            <div
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all ${
+                tierInfo.tier >= 4
+                  ? 'border-pink-400/80 bg-pink-500/20 text-pink-300 animate-pulse'
+                  : tierInfo.tier === 3
+                  ? 'border-purple-400/70 bg-purple-500/20 text-purple-300'
+                  : tierInfo.tier === 2
+                  ? 'border-amber-400/60 bg-amber-500/20 text-amber-300'
+                  : tierInfo.tier === 1
+                  ? 'border-cyan-400/50 bg-cyan-500/20 text-cyan-300'
+                  : 'border-slate-800 bg-slate-800/80 text-slate-400'
+              }`}
+            >
+              {tierInfo.tier >= 4 ? (
+                <Sparkles className="h-4 w-4 text-pink-300 animate-spin" style={{ animationDuration: '6s' }} />
+              ) : tierInfo.tier >= 2 ? (
+                <Flame className={`h-4 w-4 fill-current ${tierInfo.tier === 3 ? 'text-purple-300' : 'text-amber-400'}`} />
+              ) : tierInfo.tier === 1 ? (
+                <Zap className="h-4 w-4 fill-current text-cyan-300" />
+              ) : (
+                <Flame className="h-4 w-4 text-slate-500" />
+              )}
+            </div>
+
+            {/* Streak & Tier Label */}
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs font-black tracking-wide text-white truncate">
+                  {dailyStreak > 0 ? `${dailyStreak}-Day Streak` : 'Streak Multiplier'}
+                </span>
+                <span
+                  className={`inline-flex items-center rounded px-1.5 py-0.2 text-[9px] font-bold uppercase tracking-wider border ${tierInfo.badgeBg}`}
+                >
+                  {tierInfo.title}
+                </span>
+              </div>
+
+              {/* 7-pip weekly streak progress dots */}
+              <div className="flex items-center gap-1 mt-0.5" title="7-Day Check-in Streak Cycle">
+                {[1, 2, 3, 4, 5, 6, 7].map((dayNum) => {
+                  const dayInCycle = dailyStreak === 0 ? 0 : ((dailyStreak - 1) % 7) + 1;
+                  const isAchieved = dailyStreak > 0 && (dayNum <= dayInCycle || dailyStreak >= 7);
+                  return (
+                    <div
+                      key={dayNum}
+                      className={`h-1.5 rounded-sm transition-all ${
+                        isAchieved
+                          ? dayNum === 7
+                            ? 'w-3 bg-gradient-to-r from-pink-400 to-amber-400 shadow-[0_0_6px_#f43f5e]'
+                            : 'w-2 bg-current shadow-[0_0_5px_currentColor]'
+                          : 'w-2 bg-slate-800'
+                      }`}
+                      style={{ color: isAchieved ? tierInfo.glowColorHex : undefined }}
+                    />
+                  );
+                })}
+                <span className="text-[10px] font-mono-nums text-slate-400 ml-1">
+                  {dailyStreak > 0 ? `Day ${((dailyStreak - 1) % 7) + 1}/7` : 'Day 0/7'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Luminous Multiplier Display & Info Toggle */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowStreakDetails((prev) => !prev)}
+              title="Click to view Streak Multiplier breakdown"
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-right transition-all cursor-pointer ${
+                tierInfo.badgeBg
+              } hover:brightness-110 active:scale-95`}
+            >
+              <div className="flex flex-col items-end leading-tight">
+                <span className="text-[9px] uppercase font-semibold text-slate-300">
+                  Session Boost
+                </span>
+                <div className="flex items-baseline gap-1">
+                  <span className="font-mono-nums text-sm font-extrabold text-white">
+                    {activeMultiplier.toFixed(2)}x
+                  </span>
+                  {tierInfo.bonusPercent > 0 && (
+                    <span className="text-[10px] font-bold text-emerald-300">
+                      +{tierInfo.bonusPercent}%
+                    </span>
+                  )}
+                </div>
+              </div>
+              <Info className="h-3.5 w-3.5 text-slate-300 opacity-80" />
+            </button>
+          </div>
+        </div>
+
+        {/* Expandable Explanation & Bonus Details Card */}
+        {showStreakDetails && (
+          <div className="border-t border-slate-800/80 bg-slate-950/90 p-3 flex flex-col gap-2 text-xs">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-1.5 font-bold text-white">
+                <TrendingUp className="h-4 w-4 text-amber-400 shrink-0" />
+                <span>Daily Check-in Score Multiplier</span>
+              </div>
+              <span className="text-[11px] font-mono-nums font-bold text-emerald-400">
+                Active: {activeMultiplier.toFixed(2)}x
+              </span>
+            </div>
+
+            <p className="text-[11px] text-slate-300 leading-relaxed">
+              Every consecutive daily check-in grants <span className="font-bold text-amber-300">+5% score boost</span> on all placed crystals and cleared lines for the active play session (up to <span className="font-bold text-pink-300">1.50x MAX at Day 10+</span>).
+            </p>
+
+            <div className="grid grid-cols-2 gap-1.5 text-[10px] font-medium pt-1">
+              <div className="rounded-lg bg-slate-900 border border-slate-800 p-2 flex flex-col">
+                <span className="text-slate-400 uppercase text-[9px]">Current Streak</span>
+                <span className="text-sm font-mono-nums font-bold text-white">
+                  {dailyStreak} {dailyStreak === 1 ? 'Day' : 'Days'}
+                </span>
+                <span className="text-[9px] text-slate-400">Tier: {tierInfo.title}</span>
+              </div>
+              <div className="rounded-lg bg-slate-900 border border-slate-800 p-2 flex flex-col">
+                <span className="text-slate-400 uppercase text-[9px]">Score Gain</span>
+                <span className="text-sm font-mono-nums font-bold text-emerald-400">
+                  +{tierInfo.bonusPercent}% Extra Points
+                </span>
+                <span className="text-[9px] text-slate-400">
+                  {tierInfo.nextTierStreak
+                    ? `Next: Day ${tierInfo.nextTierStreak} (+${Math.round((getStreakMultiplier(tierInfo.nextTierStreak) - 1) * 100)}%)`
+                    : 'Maximum Boost Reached!'}
+                </span>
+              </div>
+            </div>
+
+            {onOpenDailyReward && (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowStreakDetails(false);
+                  onOpenDailyReward();
+                }}
+                className={`mt-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+                  canClaimDailyReward
+                    ? 'border-amber-400 bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 ring-1 ring-amber-400/50'
+                    : 'border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800'
+                }`}
+              >
+                <Gift className="h-3.5 w-3.5 text-amber-400" />
+                <span>
+                  {canClaimDailyReward
+                    ? "Claim Today's Check-in (+5% Boost!)"
+                    : 'View Streak Calendar & Rewards'}
+                </span>
+                <ChevronRight className="h-3 w-3 ml-auto opacity-70" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Crystal Decay Hazard Strip (Classic Endless Mode) */}

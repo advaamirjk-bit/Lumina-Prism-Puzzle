@@ -2,7 +2,7 @@ import React from 'react';
 import { UserSettings, VibrationIntensity } from '../../utils/storage';
 import { CrystalThemeId } from '../../types/game';
 import { CRYSTAL_THEMES } from '../../utils/themeConfig';
-import { X, Volume2, VolumeX, Music, Vibrate, Eye, Palette, Check, PlayCircle, Smartphone } from 'lucide-react';
+import { X, Volume2, VolumeX, Music, Vibrate, Eye, Palette, Check, PlayCircle, Smartphone, Download, ExternalLink } from 'lucide-react';
 import { soundManager } from '../../audio/soundManager';
 import { vibratePreview } from '../../utils/vibration';
 
@@ -366,6 +366,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               TWA Verified
             </span>
           </div>
+
+          <a
+            href="https://www.pwabuilder.com/reportcard?site=https%3A%2F%2Fais-dev-ayhknptvokpkn7nzszquft-959935947569.asia-southeast1.run.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-2 text-xs font-bold text-white hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>Generate & Download .AAB Bundle (PWABuilder)</span>
+            <ExternalLink className="h-3 w-3 opacity-70" />
+          </a>
 
           {onReplayTutorial && (
             <button

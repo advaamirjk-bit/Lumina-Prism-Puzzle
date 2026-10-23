@@ -123,10 +123,15 @@ export const DailyRewardModal: React.FC<DailyRewardModalProps> = ({
             </div>
             <div>
               <h2 className="text-xl font-bold text-white">Daily Rewards & Streak</h2>
-              <div className="flex items-center gap-2 text-xs text-amber-400">
+              <div className="flex items-center gap-2 text-xs text-amber-400 flex-wrap">
                 <span className="flex items-center gap-1 font-semibold">
                   <Flame className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                   {currentStreak}-Day Streak
+                </span>
+                <span className="text-slate-500">•</span>
+                <span className="flex items-center gap-1 text-emerald-400 font-bold bg-emerald-500/15 px-1.5 py-0.2 rounded border border-emerald-500/40">
+                  <Sparkles className="h-3 w-3 text-emerald-400" />
+                  {(1 + Math.min(Math.max(currentStreak, 0), 10) * 0.05).toFixed(2)}x Score Boost
                 </span>
                 <span className="text-slate-500">•</span>
                 <span className="flex items-center gap-1 text-cyan-400 font-medium">
